@@ -81,9 +81,8 @@ class create_transaction(generics.GenericAPIView):
         date_time = timezone.now()
         data = {
             "amount": request.data.get("amount"),
-            "is_expense": request.data.get("amount"),
-            "labels": request.data.get("amount"),
-            "wallet": request.data.get("amount"),
+            "is_expense": request.data.get("is_expense", True),
+            "wallet": request.data.get("wallet"),
             "date_time": date_time,
             # These will be used to crete data rich statistics for the user,
             "day": date_time.day,
@@ -92,11 +91,20 @@ class create_transaction(generics.GenericAPIView):
             "year": date_time.year
         }
 
+        label_strings = request.data.get("labels")
+        labels = []
+        for label in label_strings:
+            lbl = Label.objects.get(id=label, user=request.user)
+            labels.append(lbl)
+        
+        data["wallet"] = Wallet.objects.get(id=data["wallet"], user=request.user)
         trxn = Transaction.objects.create(**data)
+        trxn.labels.add(*labels)
+        trxn.save()
 
         return Response({
             "success": True,
-            "trxn": TransactionSerializer(trxn)
+            "trxn": TransactionSerializer(trxn).data
         })
 
 @permission_classes([IsAuthenticated])
@@ -113,6 +121,7 @@ class create_label(generics.GenericAPIView):
             "color": request.data.get("color", "#fff"),
         }
 
+        # TODO: Check if label of same name exists for the user
         label = Label.objects.create(**data)
 
         return Response({
@@ -134,6 +143,7 @@ class create_wallet(generics.GenericAPIView):
             "balance": 0,
         }
 
+        # TODO: Check if wallet of same name exists for the user
         wallet = Wallet.objects.create(**data)
 
         return Response({
