@@ -173,7 +173,6 @@ class get_wallets(generics.GenericAPIView):
     serializer_class = WalletSerializer
 
     def get(self, request):
-        label_ids = request.data.get("labels")
         wallets = Wallet.objects.filter(user=request.user).order_by("-created_on")
 
         return Response({
@@ -181,3 +180,14 @@ class get_wallets(generics.GenericAPIView):
             "wallets": [WalletSerializer(wallet).data for wallet in wallets]
         })
 
+@permission_classes([IsAuthenticated])
+class get_labels(generics.GenericAPIView):
+    serializer_class = LabelSerializer
+
+    def get(self, request):
+        labels = Label.objects.filter(user=request.user).order_by("-created_on")
+
+        return Response({
+            "success": True,
+            "labels": [LabelSerializer(wallet).data for wallet in labels]
+        })

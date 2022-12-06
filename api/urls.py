@@ -12,4 +12,5 @@ urlpatterns = [
     path('create-wallet/', csrf_exempt(views.create_wallet.as_view()), name='create_wallet'),
     path('get-trxn/', csrf_exempt(views.get_transactions.as_view()), name='get_trxn'),
     path('get-wallets/', csrf_exempt(views.get_wallets.as_view()), name='get_wallets'),
+    path('get-labels/', csrf_exempt(views.get_labels.as_view()), name='get_labels'),
 ]
