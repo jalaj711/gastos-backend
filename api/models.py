@@ -20,7 +20,11 @@ class Label(models.Model):
     color = models.CharField("Color of the Label (in hex format)", max_length=7)
 
 class Transaction(models.Model):
-    # TODO: Add field description here
+    name = models.CharField("Name of the Label", null=False, max_length=100)
+    description = models.TextField("Description of the Label", default="")
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+
     amount = models.IntegerField("Transaction Amount", default=0)
     is_expense = models.BooleanField("Is it an expense?", default=True)
     labels = models.ManyToManyField(Label, verbose_name="Labels")
