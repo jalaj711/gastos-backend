@@ -10,8 +10,6 @@ from .serializers import TransactionSerializer, WalletSerializer, LabelSerialize
 from .models import Transaction, Wallet, Label
 from django.utils import timezone
 
-# Create your views here.
-
 
 @permission_classes(
     [
@@ -80,10 +78,13 @@ class create_transaction(generics.GenericAPIView):
     def post(self, request):
         date_time = timezone.now()
         data = {
+            "name": request.data.get("name"),
+            "description": request.data.get("description"),
             "amount": request.data.get("amount"),
             "is_expense": request.data.get("is_expense", True),
             "wallet": request.data.get("wallet"),
             "date_time": date_time,
+            "user": request.user,
             # These will be used to crete data rich statistics for the user,
             "day": date_time.day,
             "week": date_time.day // 7 + 1,
@@ -96,8 +97,9 @@ class create_transaction(generics.GenericAPIView):
         for label in label_strings:
             lbl = Label.objects.get(id=label, user=request.user)
             labels.append(lbl)
-        
-        data["wallet"] = Wallet.objects.get(id=data["wallet"], user=request.user)
+
+        data["wallet"] = Wallet.objects.get(
+            id=data["wallet"], user=request.user)
         trxn = Transaction.objects.create(**data)
         trxn.labels.add(*labels)
         trxn.save()
@@ -107,6 +109,7 @@ class create_transaction(generics.GenericAPIView):
             "trxn": TransactionSerializer(trxn).data
         })
 
+
 @permission_classes([IsAuthenticated])
 class create_label(generics.GenericAPIView):
     serializer_class = LabelSerializer
@@ -115,7 +118,7 @@ class create_label(generics.GenericAPIView):
         date_time = timezone.now()
         data = {
             "name": request.data.get("name"),
-            "description": request.data.get("description"),
+            "description": request.data.get("description", ""),
             "created_on": date_time,
             "user": request.user,
             "color": request.data.get("color", "#fff"),
@@ -128,6 +131,7 @@ class create_label(generics.GenericAPIView):
             "success": True,
             "label": LabelSerializer(label).data
         })
+
 
 @permission_classes([IsAuthenticated])
 class create_wallet(generics.GenericAPIView):
@@ -149,4 +153,17 @@ class create_wallet(generics.GenericAPIView):
         return Response({
             "success": True,
             "wallet": WalletSerializer(wallet).data
+        })
+
+@permission_classes([IsAuthenticated])
+class get_transactions(generics.GenericAPIView):
+    serializer_class = TransactionSerializer
+
+    def post(self, request):
+        label_ids = request.data.get("labels")
+        trxns = Transaction.objects.filter(labels__id__in=label_ids, user=request.user).order_by("-date_time")
+
+        return Response({
+            "success": True,
+            "trxns": [TransactionSerializer(tr).data for tr in trxns]
         })
