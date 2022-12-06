@@ -167,3 +167,17 @@ class get_transactions(generics.GenericAPIView):
             "success": True,
             "trxns": [TransactionSerializer(tr).data for tr in trxns]
         })
+
+@permission_classes([IsAuthenticated])
+class get_wallets(generics.GenericAPIView):
+    serializer_class = WalletSerializer
+
+    def get(self, request):
+        label_ids = request.data.get("labels")
+        wallets = Wallet.objects.filter(user=request.user).order_by("-created_on")
+
+        return Response({
+            "success": True,
+            "wallets": [WalletSerializer(wallet).data for wallet in wallets]
+        })
+
