@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Wallet, Transaction, Label, User
+from .models import Wallet, Transaction, Label
 
 # Register your models here.
-admin.register(Wallet, Transaction, Label, User)
+admin.site.register([Wallet, Transaction, Label])
