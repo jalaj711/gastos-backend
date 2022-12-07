@@ -127,13 +127,20 @@ class create_label(generics.GenericAPIView):
             "color": request.data.get("color", "#fff"),
         }
 
-        # TODO: Check if label of same name exists for the user
-        label = Label.objects.create(**data)
+        try:
+            Label.objects.get(user=request.user, name=data["name"])
+            return Response({
+                "success": False,
+                "message": "Label with same name already exists"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        except Label.DoesNotExist:
+            
+            label = Label.objects.create(**data)
 
-        return Response({
-            "success": True,
-            "label": LabelSerializer(label).data
-        })
+            return Response({
+                "success": True,
+                "label": LabelSerializer(label).data
+            })
 
 
 @permission_classes([IsAuthenticated])
@@ -144,19 +151,25 @@ class create_wallet(generics.GenericAPIView):
         date_time = timezone.now()
         data = {
             "name": request.data.get("name"),
-            "description": request.data.get("description"),
+            "description": request.data.get("description", ""),
             "created_on": date_time,
             "user": request.user,
             "balance": 0,
         }
 
-        # TODO: Check if wallet of same name exists for the user
-        wallet = Wallet.objects.create(**data)
+        try:
+            Wallet.objects.get(user=request.user, name=data["name"])
+            return Response({
+                "success": False,
+                "message": "Wallet with same name already exists"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        except Wallet.DoesNotExist:
+            wallet = Wallet.objects.create(**data)
 
-        return Response({
-            "success": True,
-            "wallet": WalletSerializer(wallet).data
-        })
+            return Response({
+                "success": True,
+                "wallet": WalletSerializer(wallet).data
+            })
 
 
 @permission_classes([IsAuthenticated])
