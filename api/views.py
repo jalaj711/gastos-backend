@@ -285,7 +285,7 @@ class get_label_stats(generics.GenericAPIView):
             })
 
         try:
-            Label.objects.get(id=label, user=request.user)
+            label = Label.objects.get(id=label, user=request.user)
         except Label.DoesNotExist:
             return Response({
                 "success": False,
@@ -294,28 +294,22 @@ class get_label_stats(generics.GenericAPIView):
 
         today = timezone.now()
 
-        # TODO : Sanitize this mess
+        core_trxns = Transaction.objects.filter(
+            user=request.user, labels__id=label.id)
+        this_year_filter = core_trxns.filter(year=today.year)
+        this_month_filter = this_year_filter.filter(month=today.month)
+        this_week_filter = this_month_filter.filter(week=today.day // 7 + 1)
+        today_filter = this_month_filter.filter(day=today.day)
+
         data = {
-            "transaction_counts": {
-                "today": Transaction.objects.filter(
-                    user=request.user, labels__id=label, day=today.day, month=today.month, year=today.year).count(),
-                "this_week": Transaction.objects.filter(
-                    user=request.user, labels__id=label, week=today.day // 7 + 1, month=today.month, year=today.year).count(),
-                "this_month": Transaction.objects.filter(
-                    user=request.user, labels__id=label, month=today.month, year=today.year).count(),
+            "label": LabelSerializer(label).data,
+            "transactions": {
+                "today": today_filter.values("day").annotate(count=Count('id'), spent=Sum('amount')),
+                "this_week": this_week_filter.values("week").annotate(count=Count('id'), spent=Sum('amount')),
+                "this_month": this_month_filter.values("month").annotate(count=Count('id'), spent=Sum('amount')),
             },
-            "transaction_amounts": {
-                "today": Transaction.objects.filter(
-                    user=request.user, labels__id=label, day=today.day, month=today.month, year=today.year).aggregate(Sum('amount')),
-                "this_week": Transaction.objects.filter(
-                    user=request.user, labels__id=label, week=today.day // 7 + 1, month=today.month, year=today.year).aggregate(Sum('amount')),
-                "this_month": Transaction.objects.filter(
-                    user=request.user, labels__id=label, month=today.month, year=today.year).aggregate(Sum('amount')),
-            },
-            "weekly_transactions": Transaction.objects.filter(user=request.user, month=today.month, labels__id=label).values("week").annotate(count=Count('id')),
-            "monthly_transactions": Transaction.objects.filter(user=request.user, year=today.year, labels__id=label).values("month").annotate(count=Count('id')),
-            "weekly_spent": Transaction.objects.filter(user=request.user, month=today.month, labels__id=label).values("week").annotate(amount=Sum('amount')),
-            "monthly_spent": Transaction.objects.filter(user=request.user, year=today.year, labels__id=label).values("month").annotate(amount=Sum('amount'))
+            "weekly": this_month_filter.values("week").annotate(count=Count('id'), spent=Sum('amount')),
+            "monthly": this_year_filter.values("month").annotate(count=Count('id'), spent=Sum('amount'))
         }
 
         # Total amount spent by number of days
@@ -326,5 +320,5 @@ class get_label_stats(generics.GenericAPIView):
 
         return Response({
             "success": True,
-            "labels": data
+            "data": data
         })
