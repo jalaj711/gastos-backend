@@ -27,14 +27,14 @@ class register(generics.GenericAPIView):
             request.data.get("username") != ""
             and request.data.get("password") != ""
         ):
-            # try:
-            user = User.objects.create_user(
-                username=request.data.get("username"),
-                password=request.data.get("password")
-            )
-            # except Exception as e:
-            #     print(e)
-            #     return Response("Username already used!!", status=status.HTTP_400_BAD_REQUEST)
+            try:
+                user = User.objects.create_user(
+                    username=request.data.get("username"),
+                    password=request.data.get("password")
+                )
+            except Exception as e:
+                return Response("Username already used!!", status=status.HTTP_400_BAD_REQUEST)
+            
             return Response(
                 {
                     "token": AuthToken.objects.create(user)[1],
@@ -134,7 +134,7 @@ class create_label(generics.GenericAPIView):
                 "message": "Label with same name already exists"
             }, status=status.HTTP_400_BAD_REQUEST)
         except Label.DoesNotExist:
-            
+
             label = Label.objects.create(**data)
 
             return Response({
@@ -219,12 +219,10 @@ class get_transactions(generics.GenericAPIView):
         if len(label_ids) != 0 and label_search_union:
             search_filters["labels__id__in"] = label_ids
 
-
-
         if len(label_ids) != 0 and not label_search_union:
             labels = [Q(labels__id=label) for label in label_ids]
             trxns = Transaction.objects.all().exclude(~Q(labels__id__in=label_ids))
-            #.filter(
+            # .filter(
             #   reduce(operator.and_, labels)).order_by("-date_time")
             print(trxns, labels)
         else:
