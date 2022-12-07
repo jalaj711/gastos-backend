@@ -31,6 +31,7 @@ class Transaction(models.Model):
     wallet = models.ForeignKey(Wallet, verbose_name="Wallet Used for Transaction", on_delete=models.CASCADE)
 
     date_time = models.DateTimeField("Date & Time of Transaction", auto_now_add=True)
+    # time = models.TimeField("Time of the transaction", auto_now_add=True)
 
     # These will be used to crete data rich statistics for the user
     day = models.IntegerField("Date of the Month")

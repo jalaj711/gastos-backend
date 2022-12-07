@@ -9,9 +9,16 @@ from django.contrib.auth.models import User
 from .serializers import TransactionSerializer, WalletSerializer, LabelSerializer
 from .models import Transaction, Wallet, Label
 from django.utils import timezone
-from django.db.models import Q
+from django.db.models import Q, Sum, Count
 import operator
 from functools import reduce
+
+
+def _serialize(objects, serializer_class):
+    serialized = []
+    for obj in objects:
+        serialized.append(serializer_class(obj).data)
+    return serialized
 
 
 @permission_classes(
@@ -34,7 +41,7 @@ class register(generics.GenericAPIView):
                 )
             except Exception as e:
                 return Response("Username already used!!", status=status.HTTP_400_BAD_REQUEST)
-            
+
             return Response(
                 {
                     "token": AuthToken.objects.create(user)[1],
@@ -261,4 +268,63 @@ class get_labels(generics.GenericAPIView):
         return Response({
             "success": True,
             "labels": [LabelSerializer(wallet).data for wallet in labels]
+        })
+
+
+@permission_classes([IsAuthenticated])
+class get_label_stats(generics.GenericAPIView):
+    serializer_class = LabelSerializer
+
+    def get(self, request):
+        label = request.GET.get("label")
+
+        if label is None:
+            return Response({
+                "success": False,
+                "message": "Label is not provided"
+            })
+
+        try:
+            Label.objects.get(id=label, user=request.user)
+        except Label.DoesNotExist:
+            return Response({
+                "success": False,
+                "message": "The requested label does not exist"
+            })
+
+        today = timezone.now()
+
+        # TODO : Sanitize this mess
+        data = {
+            "transaction_counts": {
+                "today": Transaction.objects.filter(
+                    user=request.user, labels__id=label, day=today.day, month=today.month, year=today.year).count(),
+                "this_week": Transaction.objects.filter(
+                    user=request.user, labels__id=label, week=today.day // 7 + 1, month=today.month, year=today.year).count(),
+                "this_month": Transaction.objects.filter(
+                    user=request.user, labels__id=label, month=today.month, year=today.year).count(),
+            },
+            "transaction_amounts": {
+                "today": Transaction.objects.filter(
+                    user=request.user, labels__id=label, day=today.day, month=today.month, year=today.year).aggregate(Sum('amount')),
+                "this_week": Transaction.objects.filter(
+                    user=request.user, labels__id=label, week=today.day // 7 + 1, month=today.month, year=today.year).aggregate(Sum('amount')),
+                "this_month": Transaction.objects.filter(
+                    user=request.user, labels__id=label, month=today.month, year=today.year).aggregate(Sum('amount')),
+            },
+            "weekly_transactions": Transaction.objects.filter(user=request.user, month=today.month, labels__id=label).values("week").annotate(count=Count('id')),
+            "monthly_transactions": Transaction.objects.filter(user=request.user, year=today.year, labels__id=label).values("month").annotate(count=Count('id')),
+            "weekly_spent": Transaction.objects.filter(user=request.user, month=today.month, labels__id=label).values("week").annotate(amount=Sum('amount')),
+            "monthly_spent": Transaction.objects.filter(user=request.user, year=today.year, labels__id=label).values("month").annotate(amount=Sum('amount'))
+        }
+
+        # Total amount spent by number of days
+        # tr.objects.filter(month=12).values("day", "month", "year").annotate(spent=Sum('amount'))
+
+        # Filter by date_time
+        # tr.objects.filter(date_time__gt=tz.date(2022, 12, 06))
+
+        return Response({
+            "success": True,
+            "labels": data
         })
