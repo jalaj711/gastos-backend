@@ -9,6 +9,9 @@ from django.contrib.auth.models import User
 from .serializers import TransactionSerializer, WalletSerializer, LabelSerializer
 from .models import Transaction, Wallet, Label
 from django.utils import timezone
+from django.db.models import Q
+import operator
+from functools import reduce
 
 
 @permission_classes(
@@ -79,7 +82,7 @@ class create_transaction(generics.GenericAPIView):
         date_time = timezone.now()
         data = {
             "name": request.data.get("name"),
-            "description": request.data.get("description"),
+            "description": request.data.get("description", ""),
             "amount": request.data.get("amount"),
             "is_expense": request.data.get("is_expense", True),
             "wallet": request.data.get("wallet"),
@@ -155,37 +158,94 @@ class create_wallet(generics.GenericAPIView):
             "wallet": WalletSerializer(wallet).data
         })
 
+
 @permission_classes([IsAuthenticated])
 class get_transactions(generics.GenericAPIView):
     serializer_class = TransactionSerializer
 
-    def post(self, request):
-        label_ids = request.data.get("labels")
-        trxns = Transaction.objects.filter(labels__id__in=label_ids, user=request.user).order_by("-date_time")
+    def get(self, request):
+
+        # Extract Labels
+        label_ids = []
+        _labels = request.GET.get("labels", "").split(",")
+        if len(_labels) > 0 and _labels[0] != "":
+            label_ids = [int(i) for i in _labels]
+
+        # Whether the labels selected are to be used as an union
+        # search or an intersection set.
+
+        # Union means: If labels A & B are selected, then the search
+        # results should contain all trxns with the label A only, B
+        # only and both A & B
+
+        # Intersection means: If labels A & B are selected then the
+        # search result should only contain trxns with both A & B.
+        label_search_union = request.GET.get(
+            "label_search_type_union", "true").capitalize() == True
+
+        # Extract Wallets
+        wallet_ids = []
+        _wallets = request.GET.get("wallets", "").split(",")
+        if len(_wallets) > 0 and _wallets[0] != "":
+            wallet_ids = [int(i) for i in _wallets]
+
+        # Extract Search string
+        search_str = request.GET.get("search", "")
+
+        # Build the filters
+        search_filters = {
+            "user": request.user
+        }
+
+        if len(wallet_ids) != 0:
+            search_filters["wallet__id__in"] = wallet_ids
+
+        if search_str != "":
+            search_filters["name__contains"] = search_str
+
+        if len(label_ids) != 0 and label_search_union:
+            search_filters["labels__id__in"] = label_ids
+
+
+
+        if len(label_ids) != 0 and not label_search_union:
+            labels = [Q(labels__id=label) for label in label_ids]
+            trxns = Transaction.objects.all().exclude(~Q(labels__id__in=label_ids))
+            #.filter(
+            #   reduce(operator.and_, labels)).order_by("-date_time")
+            print(trxns, labels)
+        else:
+            print(search_filters)
+            trxns = Transaction.objects.filter(
+                **search_filters).distinct().order_by("-date_time")
 
         return Response({
             "success": True,
-            "trxns": [TransactionSerializer(tr).data for tr in trxns]
+            "trxns": [TransactionSerializer(trxn).data for trxn in trxns]
         })
+
 
 @permission_classes([IsAuthenticated])
 class get_wallets(generics.GenericAPIView):
     serializer_class = WalletSerializer
 
     def get(self, request):
-        wallets = Wallet.objects.filter(user=request.user).order_by("-created_on")
+        wallets = Wallet.objects.filter(
+            user=request.user).order_by("-created_on")
 
         return Response({
             "success": True,
             "wallets": [WalletSerializer(wallet).data for wallet in wallets]
         })
 
+
 @permission_classes([IsAuthenticated])
 class get_labels(generics.GenericAPIView):
     serializer_class = LabelSerializer
 
     def get(self, request):
-        labels = Label.objects.filter(user=request.user).order_by("-created_on")
+        labels = Label.objects.filter(
+            user=request.user).order_by("-created_on")
 
         return Response({
             "success": True,
