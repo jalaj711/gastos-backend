@@ -15,4 +15,5 @@ urlpatterns = [
     path('get-labels/', csrf_exempt(views.get_labels.as_view()), name='get_labels'),
     path('get-label-stats/', csrf_exempt(views.get_label_stats.as_view()), name='get_label_stats'),
     path('get-wallet-stats/', csrf_exempt(views.get_wallet_stats.as_view()), name='get_wallet_stats'),
+    path('get-user-stats/', csrf_exempt(views.get_user_stats.as_view()), name='get_user_stats'),
 ]
