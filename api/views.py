@@ -352,6 +352,7 @@ class get_label_stats(generics.GenericAPIView):
                 "this_week": this_week_filter.values("week").annotate(count=Count('id'), spent=Sum('amount')),
                 "this_month": this_month_filter.values("month").annotate(count=Count('id'), spent=Sum('amount')),
             },
+            "daily": this_week_filter.values("day").annotate(count=Count('id'), spent=Sum('amount')),
             "weekly": this_month_filter.values("week").annotate(count=Count('id'), spent=Sum('amount')),
             "monthly": this_year_filter.values("month").annotate(count=Count('id'), spent=Sum('amount')),
 
@@ -408,6 +409,7 @@ class get_wallet_stats(generics.GenericAPIView):
                 "this_week": this_week_filter.values("week").annotate(count=Count('id'), spent=Sum('amount')),
                 "this_month": this_month_filter.values("month").annotate(count=Count('id'), spent=Sum('amount')),
             },
+            "daily": this_week_filter.values("day").annotate(count=Count('id'), spent=Sum('amount')),
             "weekly": this_month_filter.values("week").annotate(count=Count('id'), spent=Sum('amount')),
             "monthly": this_year_filter.values("month").annotate(count=Count('id'), spent=Sum('amount')),
 
