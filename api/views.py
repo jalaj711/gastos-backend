@@ -309,7 +309,62 @@ class get_label_stats(generics.GenericAPIView):
                 "this_month": this_month_filter.values("month").annotate(count=Count('id'), spent=Sum('amount')),
             },
             "weekly": this_month_filter.values("week").annotate(count=Count('id'), spent=Sum('amount')),
-            "monthly": this_year_filter.values("month").annotate(count=Count('id'), spent=Sum('amount'))
+            "monthly": this_year_filter.values("month").annotate(count=Count('id'), spent=Sum('amount')),
+            "recents": _serialize(core_trxns.order_by("-date_time"), TransactionSerializer)
+        }
+
+        # Total amount spent by number of days
+        # tr.objects.filter(month=12).values("day", "month", "year").annotate(spent=Sum('amount'))
+
+        # Filter by date_time
+        # tr.objects.filter(date_time__gt=tz.date(2022, 12, 06))
+
+        return Response({
+            "success": True,
+            "data": data
+        })
+
+
+@permission_classes([IsAuthenticated])
+class get_wallet_stats(generics.GenericAPIView):
+    serializer_class = WalletSerializer
+
+    def get(self, request):
+        wallet = request.GET.get("wallet")
+
+        if wallet is None:
+            return Response({
+                "success": False,
+                "message": "Wallet is not provided"
+            })
+
+        try:
+            wallet = Wallet.objects.get(id=wallet, user=request.user)
+        except wallet.DoesNotExist:
+            return Response({
+                "success": False,
+                "message": "The requested wallet does not exist"
+            })
+
+        today = timezone.now()
+
+        core_trxns = Transaction.objects.filter(
+            user=request.user, wallet__id=wallet.id)
+        this_year_filter = core_trxns.filter(year=today.year)
+        this_month_filter = this_year_filter.filter(month=today.month)
+        this_week_filter = this_month_filter.filter(week=today.day // 7 + 1)
+        today_filter = this_month_filter.filter(day=today.day)
+
+        data = {
+            "wallet": WalletSerializer(wallet).data,
+            "transactions": {
+                "today": today_filter.values("day").annotate(count=Count('id'), spent=Sum('amount')),
+                "this_week": this_week_filter.values("week").annotate(count=Count('id'), spent=Sum('amount')),
+                "this_month": this_month_filter.values("month").annotate(count=Count('id'), spent=Sum('amount')),
+            },
+            "weekly": this_month_filter.values("week").annotate(count=Count('id'), spent=Sum('amount')),
+            "monthly": this_year_filter.values("month").annotate(count=Count('id'), spent=Sum('amount')),
+            "recents": _serialize(core_trxns.order_by("-date_time"), TransactionSerializer)
         }
 
         # Total amount spent by number of days
