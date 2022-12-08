@@ -201,7 +201,7 @@ class get_transactions(generics.GenericAPIView):
         # Intersection means: If labels A & B are selected then the
         # search result should only contain trxns with both A & B.
         label_search_union = request.GET.get(
-            "label_search_type_union", "true").capitalize() == True
+            "label_search_type_union", "true") == "true"
 
         # Extract Wallets
         wallet_ids = []
@@ -226,20 +226,18 @@ class get_transactions(generics.GenericAPIView):
         if len(label_ids) != 0 and label_search_union:
             search_filters["labels__id__in"] = label_ids
 
+        trxns = Transaction.objects
         if len(label_ids) != 0 and not label_search_union:
-            labels = [Q(labels__id=label) for label in label_ids]
-            trxns = Transaction.objects.all().exclude(~Q(labels__id__in=label_ids))
-            # .filter(
-            #   reduce(operator.and_, labels)).order_by("-date_time")
-            print(trxns, labels)
-        else:
-            print(search_filters)
-            trxns = Transaction.objects.filter(
-                **search_filters).distinct().order_by("-date_time")
+            for label in label_ids:
+                trxns = trxns.filter(labels__id=label)
+            trxns = trxns.filter(**search_filters)
+
+        trxns = trxns.filter(
+            **search_filters).distinct().order_by("-date_time")
 
         return Response({
             "success": True,
-            "trxns": [TransactionSerializer(trxn).data for trxn in trxns]
+            "trxns": _serialize(trxns, TransactionSerializer)
         })
 
 
