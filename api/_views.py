@@ -213,27 +213,25 @@ class get_transactions(generics.GenericAPIView):
         search_str = request.GET.get("search", "")
 
         # Build the filters
-        search_filters = {
+        search_filters_args, search_filters_kwargs = [], {
             "user": request.user
         }
 
         if len(wallet_ids) != 0:
-            search_filters["wallet__id__in"] = wallet_ids
+            search_filters_kwargs["wallet__id__in"] = wallet_ids
 
         if search_str != "":
-            search_filters["name__contains"] = search_str
+            search_filters_args = Q(name__icontains=search_str) | Q(description__icontains=search_str)
 
         if len(label_ids) != 0 and label_search_union:
-            search_filters["labels__id__in"] = label_ids
+            search_filters_kwargs["labels__id__in"] = label_ids
 
         trxns = Transaction.objects
         if len(label_ids) != 0 and not label_search_union:
             for label in label_ids:
                 trxns = trxns.filter(labels__id=label)
-            trxns = trxns.filter(**search_filters)
 
-        trxns = trxns.filter(
-            **search_filters).distinct().order_by("-date_time")
+        trxns = trxns.filter(*search_filters_args, **search_filters_kwargs).distinct().order_by("-date_time")
 
         return Response({
             "success": True,

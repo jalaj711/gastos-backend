@@ -3,17 +3,62 @@ from django.views.decorators.csrf import csrf_exempt
 
 from . import views
 
+API_BASE = ""
 
-urlpatterns = [
-    path('login/', csrf_exempt(views.login.as_view()), name='login'),
-    path('register/', csrf_exempt(views.register.as_view()), name='register'),
-    path('create-trxn/', csrf_exempt(views.create_transaction.as_view()), name='create_trxn'),
-    path('create-label/', csrf_exempt(views.create_label.as_view()), name='create_label'),
-    path('create-wallet/', csrf_exempt(views.create_wallet.as_view()), name='create_wallet'),
-    path('get-trxn/', csrf_exempt(views.get_transactions.as_view()), name='get_trxn'),
-    path('get-wallets/', csrf_exempt(views.get_wallets.as_view()), name='get_wallets'),
-    path('get-labels/', csrf_exempt(views.get_labels.as_view()), name='get_labels'),
-    path('get-label-stats/', csrf_exempt(views.get_label_stats.as_view()), name='get_label_stats'),
-    path('get-wallet-stats/', csrf_exempt(views.get_wallet_stats.as_view()), name='get_wallet_stats'),
-    path('get-user-stats/', csrf_exempt(views.get_user_stats.as_view()), name='get_user_stats'),
-]
+USER_URLS = {
+    "get": views.user.login.as_view(),
+    "dashboard": views.user.get_user_stats.as_view()
+}
+
+TRANSACTION_URLS = {
+    "create": views.transaction.create.as_view(),
+    "search": views.transaction.get.as_view()
+}
+
+LABEL_URLS = {
+    "create": views.label.create.as_view(),
+    "get": views.label.get.as_view(),
+    "stats": views.label.stats.as_view(),
+    "search": views.label.get.as_view()
+}
+
+WALLET_URLS = {
+    "create": views.wallet.create.as_view(),
+    "get": views.wallet.get.as_view(),
+    "stats": views.wallet.stats.as_view(),
+    "search": views.wallet.get.as_view()
+}
+
+AUTH_URLS = {
+    "login": views.user.login.as_view(),
+    "register": views.user.register.as_view(),
+    # "SOCIAL": {
+    #     "GOOGLE": "/auth/social/google/",
+    #     "FACEBOOK": "/auth/social/facebook/"
+    # },
+    # "LOGIN": "/auth/login/",
+    # "LOGOUT": "/auth/logout/",
+    # "SIGNUP": "/auth/signup/",
+    # "FORGOT_PASSWORD": "/auth/forgot-password/",
+}
+
+URLs = {
+    "auth": AUTH_URLS,
+    "wallet": WALLET_URLS,
+    "label": LABEL_URLS,
+    "transactions": TRANSACTION_URLS,
+    "user": USER_URLS
+}
+
+urlpatterns = []
+
+for url_domain in URLs:
+    for url in URLs[url_domain]:
+        route = url_domain + "/" + url + "/"
+        urlpatterns.append(path(
+            route,
+            csrf_exempt(URLs[url_domain][url]),
+            name=route.replace('/', '_')
+        ))
+
+print(urlpatterns)
