@@ -61,4 +61,3 @@ for url_domain in URLs:
             name=route.replace('/', '_')
         ))
 
-print(urlpatterns)
