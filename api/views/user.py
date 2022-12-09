@@ -4,14 +4,13 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 
 from knox.models import AuthToken
-from knox.serializers import UserSerializer
 
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.db.models import Sum, Count
 
-from api.serializers import TransactionSerializer, WalletSerializer, LabelSerializer
+from api.serializers import TransactionSerializer, WalletSerializer, LabelSerializer, UserSerializer
 from api.models import Transaction, Wallet, Label
 from api.utils.serialize import _serialize
 
@@ -62,7 +61,7 @@ class login(generics.GenericAPIView):
         if user is not None:
             return Response(
                 {
-                    "user": UserSerializer(
+                    "user_data": UserSerializer(
                         user, context=self.get_serializer_context()
                     ).data,
                     "token": AuthToken.objects.create(user)[1],
