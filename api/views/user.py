@@ -59,11 +59,16 @@ class login(generics.GenericAPIView):
             username=request.data.get("username"), password=request.data.get("password")
         )
         if user is not None:
+            data = UserSerializer(
+                        user, context=self.get_serializer_context()
+                    ).data
+            data.update({
+                "labels": user.label_set.all().values("id", "name", "color"),
+                "wallets": user.wallet_set.all().values("id", "name", "balance")
+            })
             return Response(
                 {
-                    "user_data": UserSerializer(
-                        user, context=self.get_serializer_context()
-                    ).data,
+                    "user_data": data,
                     "token": AuthToken.objects.create(user)[1],
                     "status": 200,
                 }
