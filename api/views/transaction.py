@@ -91,7 +91,7 @@ class get(generics.GenericAPIView):
             search_filters_kwargs["wallet__id__in"] = wallet_ids
 
         if search_str != "":
-            search_filters_args = Q(name__icontains=search_str) | Q(description__icontains=search_str)
+            search_filters_args.append(Q(name__icontains=search_str) | Q(description__icontains=search_str))
 
         if len(label_ids) != 0 and label_search_union:
             search_filters_kwargs["labels__id__in"] = label_ids
