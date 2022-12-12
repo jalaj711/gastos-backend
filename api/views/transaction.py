@@ -5,6 +5,7 @@ from rest_framework.response import Response
 
 from django.utils import timezone
 from django.db.models import Q
+from django.core.paginator import Paginator, EmptyPage
 
 from api.serializers import TransactionSerializer
 from api.models import Transaction, Wallet, Label
@@ -103,7 +104,18 @@ class get(generics.GenericAPIView):
 
         trxns = trxns.filter(*search_filters_args, **search_filters_kwargs).distinct().order_by("-date_time")
 
+        try:
+            page = Paginator(trxns, request.GET.get("entries_per_page", 15)).get_page(request.GET.get("page", 1))
+        except EmptyPage:
+            return Response({
+            "success": False,
+            "message": "Invalid page requested"
+        })
         return Response({
             "success": True,
-            "trxns": _serialize(trxns, TransactionSerializer)
+            "page": {
+                "total": page.paginator.num_pages,
+                "current": page.number
+            },
+            "trxns": _serialize(page.object_list, TransactionSerializer)
         })

@@ -24,7 +24,7 @@ class WalletSerializerMinimal(serializers.ModelSerializer):
 class LabelSerializerMinimal(serializers.ModelSerializer):
     class Meta:
         model = Label
-        fields = ["id", "name"]
+        fields = ["id", "name", "color"]
 
 
 class TransactionSerializer(serializers.ModelSerializer):
