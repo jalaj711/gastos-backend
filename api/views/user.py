@@ -108,7 +108,7 @@ class get_user_stats(generics.GenericAPIView):
             "monthly": this_year_filter.values("month").annotate(count=Count('id'), spent=Sum('amount')),
 
             # TODO: Limit the number of responses in this query
-            "recents": _serialize(core_trxns.order_by("-date_time"), TransactionSerializer)
+            "recents": _serialize(core_trxns.order_by("-date_time")[:10], TransactionSerializer)
         }
 
         # Total amount spent by number of days
