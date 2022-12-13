@@ -95,9 +95,8 @@ class get_user_stats(generics.GenericAPIView):
         data = {
             "user": UserSerializer(request.user).data,
 
-            # TODO: Limit the number of responses in these queries
-            "labels": _serialize(Label.objects.filter(user=request.user), LabelSerializer),
-            "wallets": _serialize(Wallet.objects.filter(user=request.user), WalletSerializer),
+            "labels": _serialize(Label.objects.filter(user=request.user).order_by("-created_on"), LabelSerializer)[:5],
+            "wallets": _serialize(Wallet.objects.filter(user=request.user).order_by("-created_on"), WalletSerializer)[:5],
             "transactions": {
                 "today": today_filter.values("day").annotate(count=Count('id'), spent=Sum('amount')),
                 "this_week": this_week_filter.values("week").annotate(count=Count('id'), spent=Sum('amount')),
