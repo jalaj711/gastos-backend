@@ -43,6 +43,8 @@ class create(generics.GenericAPIView):
         trxn = Transaction.objects.create(**data)
         trxn.labels.add(*labels)
         trxn.save()
+        data["wallet"].balance += data["amount"] * (-1 if data["is_expense"] else 1)
+        data["wallet"].save()
 
         return Response({
             "success": True,
