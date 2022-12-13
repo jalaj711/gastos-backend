@@ -14,6 +14,7 @@ from api.serializers import TransactionSerializer, WalletSerializer, LabelSerial
 from api.models import Transaction, Wallet, Label
 from api.utils.serialize import _serialize
 
+
 @permission_classes(
     [
         AllowAny,
@@ -30,19 +31,25 @@ class register(generics.GenericAPIView):
             try:
                 user = User.objects.create_user(
                     username=request.data.get("username"),
-                    password=request.data.get("password")
+                    password=request.data.get("password"),
+                    first_name=request.data.get("firstname"),
+                    last_name=request.data.get("lastname"),
                 )
             except Exception as e:
-                return Response("Username already used!!", status=status.HTTP_400_BAD_REQUEST)
+                return Response({
+                    "success": False,
+                    "message": "Username already used!"}, status=status.HTTP_400_BAD_REQUEST)
 
             return Response(
                 {
                     "token": AuthToken.objects.create(user)[1],
-                    "status": 200,
+                    "user": UserSerializer(user).data,
+                    "success": True,
                 }
             )
-        return Response(
-            "Username and password are required fields", status=status.HTTP_400_BAD_REQUEST
+        return Response({
+            "success": False,
+            "message": "Username and password are required fields"}, status=status.HTTP_400_BAD_REQUEST
         )
 
 
@@ -60,8 +67,8 @@ class login(generics.GenericAPIView):
         )
         if user is not None:
             data = UserSerializer(
-                        user, context=self.get_serializer_context()
-                    ).data
+                user, context=self.get_serializer_context()
+            ).data
             data.update({
                 "labels": user.label_set.all().values("id", "name", "color"),
                 "wallets": user.wallet_set.all().values("id", "name", "balance")
