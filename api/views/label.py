@@ -5,6 +5,7 @@ from rest_framework.response import Response
 
 from django.utils import timezone
 from django.db.models import Sum, Count
+from django.db.models.functions import Round
 
 from calendar import Calendar
 
@@ -100,19 +101,19 @@ class stats(generics.GenericAPIView):
         data = {
             "label": LabelSerializer(label).data,
             "transactions": {
-                "today": today_filter.values("day").annotate(count=Count('id'), spent=Sum('amount')),
-                "this_week": this_week_filter.values("week").annotate(count=Count('id'), spent=Sum('amount')),
-                "this_month": this_month_filter.values("month").annotate(count=Count('id'), spent=Sum('amount')),
+                "today": today_filter.values("day").annotate(count=Count('id'), spent=Round(Sum('amount'), precision=2)),
+                "this_week": this_week_filter.values("week").annotate(count=Count('id'), spent=Round(Sum('amount'), precision=2)),
+                "this_month": this_month_filter.values("month").annotate(count=Count('id'), spent=Round(Sum('amount'), precision=2)),
             },
-            "daily": fill_empty_data(this_week_filter.values("day", "month").annotate(count=Count('id'), spent=Sum('amount')), ["spent", "count"], "day", range(cal[this_week - 1][0], cal[this_week - 1][-1] + 1)),
-            "weekly": fill_empty_data(this_month_filter.values("week", "month").annotate(count=Count('id'), spent=Sum('amount')), ["spent", "count"], "week", range(1, len(cal) + 1)),
-            "monthly": fill_empty_data(this_year_filter.values("month", "year").annotate(count=Count('id'), spent=Sum('amount')), ["spent", "count"], "month", range(1, 13)),
+            "daily": fill_empty_data(this_week_filter.values("day", "month").annotate(count=Count('id'), spent=Round(Sum('amount'), precision=2)), ["spent", "count"], "day", range(cal[this_week - 1][0], cal[this_week - 1][-1] + 1)),
+            "weekly": fill_empty_data(this_month_filter.values("week", "month").annotate(count=Count('id'), spent=Round(Sum('amount'), precision=2)), ["spent", "count"], "week", range(1, len(cal) + 1)),
+            "monthly": fill_empty_data(this_year_filter.values("month", "year").annotate(count=Count('id'), spent=Round(Sum('amount'), precision=2)), ["spent", "count"], "month", range(1, 13)),
 
             "recents": _serialize(core_trxns.order_by("-date_time")[:10], TransactionSerializer)
         }
 
         # Total amount spent by number of days
-        # tr.objects.filter(month=12).values("day", "month", "year").annotate(spent=Sum('amount'))
+        # tr.objects.filter(month=12).values("day", "month", "year").annotate(spent=Round(Sum('amount'), precision=2))
 
         # Filter by date_time
         # tr.objects.filter(date_time__gt=tz.date(2022, 12, 06))

@@ -9,7 +9,7 @@ class Wallet(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
 
-    balance = models.IntegerField("Current Balance", default=0)
+    balance = models.FloatField("Current Balance", default=0)
 
 class Label(models.Model):
     name = models.CharField("Name of the Label", null=False, max_length=50)
@@ -25,7 +25,7 @@ class Transaction(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
 
-    amount = models.IntegerField("Transaction Amount", default=0)
+    amount = models.FloatField("Transaction Amount", default=0)
     is_expense = models.BooleanField("Is it an expense?", default=True)
     labels = models.ManyToManyField(Label, verbose_name="Labels")
     wallet = models.ForeignKey(Wallet, verbose_name="Wallet Used for Transaction", on_delete=models.CASCADE)
