@@ -10,6 +10,7 @@ from django.core.paginator import Paginator, EmptyPage
 from api.serializers import TransactionSerializer
 from api.models import Transaction, Wallet, Label
 from api.utils.serialize import _serialize
+from api.utils.week import get_wom_from_date
 
 @permission_classes([IsAuthenticated])
 class create(generics.GenericAPIView):
@@ -27,7 +28,7 @@ class create(generics.GenericAPIView):
             "user": request.user,
             # These will be used to crete data rich statistics for the user,
             "day": date_time.day,
-            "week": date_time.day // 7 + 1,
+            "week": get_wom_from_date(date_time),
             "month": date_time.month,
             "year": date_time.year
         }

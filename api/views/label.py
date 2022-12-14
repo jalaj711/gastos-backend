@@ -9,6 +9,7 @@ from django.db.models import Sum, Count
 from api.serializers import TransactionSerializer, LabelSerializer
 from api.models import Transaction, Label
 from api.utils.serialize import _serialize
+from api.utils.week import get_wom_from_date
 
 @permission_classes([IsAuthenticated])
 class create(generics.GenericAPIView):
@@ -80,7 +81,7 @@ class stats(generics.GenericAPIView):
             user=request.user, labels__id=label.id)
         this_year_filter = core_trxns.filter(year=today.year)
         this_month_filter = this_year_filter.filter(month=today.month)
-        this_week_filter = this_month_filter.filter(week=today.day // 7 + 1)
+        this_week_filter = this_month_filter.filter(week=get_wom_from_date(today))
         today_filter = this_month_filter.filter(day=today.day)
 
         data = {
