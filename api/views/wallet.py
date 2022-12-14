@@ -102,9 +102,9 @@ class stats(generics.GenericAPIView):
                 "this_week": this_week_filter.values("week").annotate(count=Count('id'), spent=Sum('amount')),
                 "this_month": this_month_filter.values("month").annotate(count=Count('id'), spent=Sum('amount')),
             },
-            "daily": fill_empty_data(this_week_filter.values("day", "month").annotate(count=Count('id'), spent=Sum('amount')), ["spent", "count"], "day", range(cal[this_week - 1][0], cal[this_week - 1][-1])),
-            "weekly": fill_empty_data(this_month_filter.values("week", "month").annotate(count=Count('id'), spent=Sum('amount')), ["spent", "count"], "week", range(1, len(cal))),
-            "monthly": fill_empty_data(this_year_filter.values("month", "year").annotate(count=Count('id'), spent=Sum('amount')), ["spent", "count"], "month", range(1, 12)),
+            "daily": fill_empty_data(this_week_filter.values("day", "month").annotate(count=Count('id'), spent=Sum('amount')), ["spent", "count"], "day", range(cal[this_week - 1][0], cal[this_week - 1][-1] + 1)),
+            "weekly": fill_empty_data(this_month_filter.values("week", "month").annotate(count=Count('id'), spent=Sum('amount')), ["spent", "count"], "week", range(1, len(cal) + 1)),
+            "monthly": fill_empty_data(this_year_filter.values("month", "year").annotate(count=Count('id'), spent=Sum('amount')), ["spent", "count"], "month", range(1, 13)),
 
             "recents": _serialize(core_trxns.order_by("-date_time")[:10], TransactionSerializer)
         }
