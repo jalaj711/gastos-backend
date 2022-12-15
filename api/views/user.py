@@ -32,14 +32,24 @@ class register(generics.GenericAPIView):
         if (
             request.data.get("username") != ""
             and request.data.get("password") != ""
+            and request.data.get("firstname") != ""
         ):
             try:
                 user = User.objects.create_user(
                     username=request.data.get("username"),
                     password=request.data.get("password"),
                     first_name=request.data.get("firstname"),
-                    last_name=request.data.get("lastname"),
+                    last_name=request.data.get("lastname", ""),
                 )
+                w = Wallet.objects.create(name="Wallet 1", description="The default wallet", user=user)
+
+                data = UserSerializer(
+                    user, context=self.get_serializer_context()
+                ).data
+                data.update({
+                    "labels": [],
+                    "wallets": [{"id": w.pk, "name": w.name, "balance": 0}]
+                })
             except Exception as e:
                 return Response({
                     "success": False,
@@ -48,7 +58,7 @@ class register(generics.GenericAPIView):
             return Response(
                 {
                     "token": AuthToken.objects.create(user)[1],
-                    "user": UserSerializer(user).data,
+                    "user": data,
                     "success": True,
                 }
             )
@@ -75,8 +85,8 @@ class login(generics.GenericAPIView):
                 user, context=self.get_serializer_context()
             ).data
             data.update({
-                "labels": user.label_set.all().values("id", "name", "color"),
-                "wallets": user.wallet_set.all().values("id", "name", "balance")
+                "labels": user.label_set.all().values("id", "name", "color").get() or [],
+                "wallets": user.wallet_set.all().values("id", "name", "balance").get() or []
             })
             return Response(
                 {
@@ -115,7 +125,7 @@ class get_user_stats(generics.GenericAPIView):
         data = {
             "user": UserSerializer(request.user).data,
 
-            "labels": _serialize(Label.objects.filter(user=request.user).order_by("-created_on"), LabelSerializer)[:5] or [],
+            "labels": _serialize(Label.objects.filter(user=request.user).order_by("-created_on"), LabelSerializer)[:5],
             "wallets": _serialize(Wallet.objects.filter(user=request.user).order_by("-created_on"), WalletSerializer)[:5],
             "transactions": {
                 "today": fill_empty_data(today_filter.values("day").annotate(count=Count('id'), spent=Round(Sum('amount'), precision=2)), ["spent", "count"], "day", [0]),
