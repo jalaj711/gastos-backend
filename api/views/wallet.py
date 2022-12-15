@@ -99,9 +99,9 @@ class stats(generics.GenericAPIView):
         data = {
             "wallet": WalletSerializer(wallet).data,
             "transactions": {
-                "today": today_filter.values("day").annotate(count=Count('id'), spent=Round(Sum('amount'), precision=2)),
-                "this_week": this_week_filter.values("week").annotate(count=Count('id'), spent=Round(Sum('amount'), precision=2)),
-                "this_month": this_month_filter.values("month").annotate(count=Count('id'), spent=Round(Sum('amount'), precision=2)),
+                "today": fill_empty_data(today_filter.values("day").annotate(count=Count('id'), spent=Round(Sum('amount'), precision=2)), ["spent", "count"], "day", [0]),
+                "this_week": fill_empty_data(this_week_filter.values("week").annotate(count=Count('id'), spent=Round(Sum('amount'), precision=2)), ["spent", "count"], "week", [0]),
+                "this_month": fill_empty_data(this_month_filter.values("month").annotate(count=Count('id'), spent=Round(Sum('amount'), precision=2)), ["spent", "count"], "month", [0]),
             },
             "daily": fill_empty_data(this_week_filter.values("day", "month").annotate(count=Count('id'), spent=Round(Sum('amount'), precision=2)), ["spent", "count"], "day", range(cal[this_week - 1][0], cal[this_week - 1][-1] + 1)),
             "weekly": fill_empty_data(this_month_filter.values("week", "month").annotate(count=Count('id'), spent=Round(Sum('amount'), precision=2)), ["spent", "count"], "week", range(1, len(cal) + 1)),
