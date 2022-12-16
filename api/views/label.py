@@ -43,6 +43,67 @@ class create(generics.GenericAPIView):
                 "success": True,
                 "label": LabelSerializer(label).data
             })
+@permission_classes([IsAuthenticated])
+class update(generics.GenericAPIView):
+    serializer_class = LabelSerializer
+
+    def post(self, request):
+        label_id = request.data.get("label", None)
+        if (label_id is None):
+            return Response({
+                "success": False,
+                "message": "Label ID is required for update"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
+        new_data = request.data.get("new_data")
+        if (new_data is None):
+            return Response({
+                "success": False,
+                "message": "New data is required for update"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        if new_data.get("name", None) is None or new_data.get("name") == "":
+            return Response({
+                "success": False,
+                "message": "Name cannot be empty"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        if new_data.get("color", None) is None or new_data.get("color") == "":
+            return Response({
+                "success": False,
+                "message": "Color cannot be empty"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            label = Label.objects.get(id=label_id, user=request.user)
+        except Label.DoesNotExist:
+            return Response({
+                "success": False,
+                "message": "Requested label not found"
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        if new_data.get("name") != label.name:
+            try:
+                Label.objects.get(user=request.user, name=new_data.get("name"))
+                return Response({
+                    "success": False,
+                    "message": "Label with same name already exists"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            except Label.DoesNotExist:
+                label.name = new_data.get("name")
+
+        if new_data.get("description", "") != label.description:
+            label.description = new_data.get("description", "")
+        
+        if new_data.get("color") != label.color:
+            label.color = new_data.get("color")
+
+        label.save()
+        return Response({
+            "success": True,
+            "label": LabelSerializer(label).data
+        })
 
 @permission_classes([IsAuthenticated])
 class get(generics.GenericAPIView):

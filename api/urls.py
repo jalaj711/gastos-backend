@@ -19,7 +19,8 @@ LABEL_URLS = {
     "create": views.label.create.as_view(),
     "get": views.label.get.as_view(),
     "stats": views.label.stats.as_view(),
-    "search": views.label.get.as_view()
+    "search": views.label.get.as_view(),
+    "update": views.label.update.as_view()
 }
 
 WALLET_URLS = {
