@@ -44,6 +44,59 @@ class create(generics.GenericAPIView):
             })
 
 @permission_classes([IsAuthenticated])
+class update(generics.GenericAPIView):
+    serializer_class = WalletSerializer
+
+    def post(self, request):
+        wallet_id = request.data.get("wallet", None)
+        if (wallet_id is None):
+            return Response({
+                "success": False,
+                "message": "Wallet ID is required for update"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
+        new_data = request.data.get("new_data")
+        if (new_data is None):
+            return Response({
+                "success": False,
+                "message": "New data is required for update"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        if new_data.get("name", None) is None or new_data.get("name") == "":
+            return Response({
+                "success": False,
+                "message": "Name cannot be empty"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            wallet = Wallet.objects.get(id=wallet_id, user=request.user)
+        except Wallet.DoesNotExist:
+            return Response({
+                "success": False,
+                "message": "Requested wallet not found"
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        if new_data.get("name") != wallet.name:
+            try:
+                Wallet.objects.get(user=request.user, name=new_data.get("name"))
+                return Response({
+                    "success": False,
+                    "message": "Wallet with same name already exists"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            except Wallet.DoesNotExist:
+                wallet.name = new_data.get("name")
+
+        if new_data.get("description", "") != wallet.description:
+            wallet.description = new_data.get("description", "")
+
+        wallet.save()
+        return Response({
+            "success": True,
+            "wallet": WalletSerializer(wallet).data
+        })
+
+@permission_classes([IsAuthenticated])
 class get(generics.GenericAPIView):
     serializer_class = WalletSerializer
 

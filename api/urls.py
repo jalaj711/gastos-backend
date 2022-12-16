@@ -26,7 +26,8 @@ WALLET_URLS = {
     "create": views.wallet.create.as_view(),
     "get": views.wallet.get.as_view(),
     "stats": views.wallet.stats.as_view(),
-    "search": views.wallet.get.as_view()
+    "search": views.wallet.get.as_view(),
+    "update": views.wallet.update.as_view()
 }
 
 AUTH_URLS = {

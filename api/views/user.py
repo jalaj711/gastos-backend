@@ -41,7 +41,8 @@ class register(generics.GenericAPIView):
                     first_name=request.data.get("firstname"),
                     last_name=request.data.get("lastname", ""),
                 )
-                w = Wallet.objects.create(name="Wallet 1", description="The default wallet", user=user)
+                w = Wallet.objects.create(
+                    name="Wallet 1", description="The default wallet", user=user)
 
                 data = UserSerializer(
                     user, context=self.get_serializer_context()
@@ -84,9 +85,17 @@ class login(generics.GenericAPIView):
             data = UserSerializer(
                 user, context=self.get_serializer_context()
             ).data
+            try:
+                labels = user.label_set.all().values("id", "name", "color")
+            except Label.DoesNotExist:
+                labels = []
+            try:
+                wallets = user.wallet_set.all().values("id", "name", "balance")
+            except Wallet.DoesNotExist:
+                wallets = []
             data.update({
-                "labels": user.label_set.all().values("id", "name", "color").get() or [],
-                "wallets": user.wallet_set.all().values("id", "name", "balance").get() or []
+                "labels":  labels,
+                "wallets":  wallets
             })
             return Response(
                 {
