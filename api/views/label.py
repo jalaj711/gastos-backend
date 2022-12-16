@@ -144,7 +144,7 @@ class stats(generics.GenericAPIView):
 
         core_trxns = Transaction.objects.filter(
             user=request.user, labels__id=label.id)
-        this_year_filter = core_trxns.filter(year=today.year)
+        this_year_filter = core_trxns.filter(year=today.year, is_expense=True)
         this_month_filter = this_year_filter.filter(month=today.month)
         today_filter = this_month_filter.filter(day=today.day)
 

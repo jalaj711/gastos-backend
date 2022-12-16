@@ -118,7 +118,7 @@ class get_user_stats(generics.GenericAPIView):
         today = timezone.now()
 
         core_trxns = Transaction.objects.filter(user=request.user)
-        this_year_filter = core_trxns.filter(year=today.year)
+        this_year_filter = core_trxns.filter(year=today.year, is_expense=True)
         this_month_filter = this_year_filter.filter(month=today.month)
         today_filter = this_month_filter.filter(day=today.day)
 
