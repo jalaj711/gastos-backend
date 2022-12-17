@@ -133,9 +133,6 @@ class get_user_stats(generics.GenericAPIView):
             pass
         data = {
             "user": UserSerializer(request.user).data,
-
-            "labels": _serialize(Label.objects.filter(user=request.user).order_by("-created_on"), LabelSerializer)[:5],
-            "wallets": _serialize(Wallet.objects.filter(user=request.user).order_by("-created_on"), WalletSerializer)[:5],
             "transactions": {
                 "today": fill_empty_data(today_filter.values("day").annotate(count=Count('id'), spent=Round(Sum('amount'), precision=2)), ["spent", "count"], "day", [0]),
                 "this_week": fill_empty_data(this_week_filter.values("week").annotate(count=Count('id'), spent=Round(Sum('amount'), precision=2)), ["spent", "count"], "week", [0]),
@@ -146,12 +143,6 @@ class get_user_stats(generics.GenericAPIView):
             "monthly": fill_empty_data(this_year_filter.values("month", "year").annotate(count=Count('id'), spent=Round(Sum('amount'), precision=2)), ["spent", "count"], "month", range(1, 13)),
             "recents": _serialize(core_trxns.order_by("-date_time")[:10], TransactionSerializer)
         }
-
-        # Total amount spent by number of days
-        # tr.objects.filter(month=12).values("day", "month", "year").annotate(spent=Round(Sum('amount'), precision=2))
-
-        # Filter by date_time
-        # tr.objects.filter(date_time__gt=tz.date(2022, 12, 06))
 
         return Response({
             "success": True,
