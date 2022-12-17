@@ -1,5 +1,6 @@
 from django.urls import path
 from django.views.decorators.csrf import csrf_exempt
+from knox.views import LogoutView
 
 from . import views
 
@@ -34,6 +35,7 @@ WALLET_URLS = {
 AUTH_URLS = {
     "login": views.user.login.as_view(),
     "register": views.user.register.as_view(),
+    "logout": LogoutView.as_view()
     # "SOCIAL": {
     #     "GOOGLE": "/auth/social/google/",
     #     "FACEBOOK": "/auth/social/facebook/"
